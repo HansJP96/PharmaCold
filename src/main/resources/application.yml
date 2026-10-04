@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: pharmacold-backend
+  profiles:
+    active: dev
+  jpa:
+    open-in-view: false

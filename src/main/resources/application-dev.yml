@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:pharmacold_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: hansee
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    #database-platform: org.hibernate.dialect.H2Dialect #no es necesario, spring boot lo detecta automáticamente
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
