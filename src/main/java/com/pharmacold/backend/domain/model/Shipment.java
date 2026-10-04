@@ -53,6 +53,6 @@ public class Shipment extends BaseAuditableEntity {
     private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sensor_id", nullable = false)
+    @JoinColumn(name = "sensor_id")
     private SensorDevice assignedSensor;
 }
