@@ -127,6 +127,15 @@ The output must strictly conform to:
    - If the staged changes contain multiple unrelated concerns (e.g., a feature addition mixed with an unrelated bugfix and formatting), prioritize the primary business concern in the header and warn/suggest commit splitting in the body.
 3. **Issue References:**
    - When a ticket reference is supplied via `context_hint` or branch naming, append it to the footer using recognized keywords: `Fixes #123`, `Closes PROJ-456`.
+4. **Shell-Safe CLI Command Obligation:**
+   - When providing a ready-to-execute `git commit` command, the agent MUST ALWAYS generate shell-safe, cross-platform commands.
+   - The agent MUST NEVER include shell-specific escape sequences such as `` `n `` (PowerShell), `\n` (Bash/Zsh), or `^` (CMD) inside commit strings, as these risk leaking literal escape characters into the commit history if executed in a different shell.
+   - Use multiple `-m` arguments to separate the header, body paragraphs, and footer:
+     ```bash
+     git commit -m "<type>(<scope>): <subject>" -m "<body>" -m "<footer>"
+     ```
+     Git natively separates multiple `-m` values with blank lines, guaranteeing clean formatting across all shells (PowerShell, Git Bash, WSL, Bash, CMD).
+   - Always also present the raw formatted commit text block so the user can review it or paste it into `git commit` editor.
 
 ---
 
