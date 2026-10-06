@@ -1,8 +1,10 @@
 package com.pharmacold.backend.domain.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Digits;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
@@ -25,8 +27,9 @@ public class TelemetryRecord extends BaseAuditableEntity {
     @Column(nullable = false)
     private Instant timestamp;
 
+    @Digits(integer = 3, fraction = 2, message = "Temperature must have at most 3 integer and 2 decimal places")
     @Column(name = "temperature_celsius", nullable = false)
-    private Double temperatureCelsius;
+    private BigDecimal temperatureCelsius;
 
     @Column(name = "humidity_percentage", nullable = false)
     private Double humidityPercentage;

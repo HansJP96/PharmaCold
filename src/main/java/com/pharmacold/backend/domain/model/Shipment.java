@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -36,11 +38,11 @@ public class Shipment extends BaseAuditableEntity {
 
     @Digits(integer = 3, fraction = 2, message = "Minimum temperature must have at most 3 integer and 2 decimal places")
     @Column(name = "min_temp_celsius", nullable = false)
-    private Double minTempCelsius;
+    private BigDecimal minTempCelsius;
 
     @Digits(integer = 3, fraction = 2, message = "Maximum temperature must have at most 3 integer and 2 decimal places")
     @Column(name = "max_temp_celsius", nullable = false)
-    private Double maxTempCelsius;
+    private BigDecimal maxTempCelsius;
 
     @Column(name = "max_allowed_excursion_minutes", nullable = false)
     private Integer maxAllowedExcursionMinutes;

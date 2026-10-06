@@ -3,8 +3,10 @@ package com.pharmacold.backend.domain.model;
 import com.pharmacold.backend.domain.enums.ExcursionSeverity;
 import com.pharmacold.backend.domain.enums.ExcursionStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Digits;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
@@ -23,8 +25,9 @@ public class ThermalExcursion extends BaseAuditableEntity {
     @Column(name = "detected_at", nullable = false)
     private Instant detectedAt;
 
+    @Digits(integer = 3, fraction = 2, message = "Recorded temperature must have at most 3 integer and 2 decimal places")
     @Column(name = "recorded_temperature", nullable = false)
-    private Double recordedTemperature;
+    private BigDecimal recordedTemperature;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
