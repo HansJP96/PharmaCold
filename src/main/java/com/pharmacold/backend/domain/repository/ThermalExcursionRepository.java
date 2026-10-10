@@ -1,7 +1,6 @@
 package com.pharmacold.backend.domain.repository;
 
 import com.pharmacold.backend.domain.enums.ExcursionStatus;
-import com.pharmacold.backend.domain.model.TelemetryRecord;
 import com.pharmacold.backend.domain.model.ThermalExcursion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
