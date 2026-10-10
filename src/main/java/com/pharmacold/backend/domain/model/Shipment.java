@@ -1,9 +1,9 @@
 package com.pharmacold.backend.domain.model;
 
 import com.pharmacold.backend.domain.enums.ShipmentStatus;
+import com.pharmacold.backend.domain.exception.InvalidShipmentStateTransitionException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -57,4 +57,41 @@ public class Shipment extends BaseAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sensor_id")
     private SensorDevice assignedSensor;
+
+    public static Shipment create(String trackingNumber, String originFacility, String destinationFacility, String productName,
+                                  String batchNumber, BigDecimal minTempCelsius, BigDecimal maxTempCelsius, Integer maxAllowedExcursionMinutes) {
+        return Shipment.builder()
+                .trackingNumber(trackingNumber)
+                .originFacility(originFacility)
+                .destinationFacility(destinationFacility)
+                .productName(productName)
+                .batchNumber(batchNumber)
+                .minTempCelsius(minTempCelsius)
+                .maxTempCelsius(maxTempCelsius)
+                .maxAllowedExcursionMinutes(maxAllowedExcursionMinutes)
+                .status(ShipmentStatus.CREATED)
+                .build();
+    }
+
+    public void startShipment(SensorDevice sensorDevice) {
+        if (this.status != ShipmentStatus.CREATED) {
+            throw new InvalidShipmentStateTransitionException(ShipmentStatus.IN_TRANSIT, this.getStatus());
+        }
+        this.assignedSensor = sensorDevice;
+        this.status = ShipmentStatus.IN_TRANSIT;
+    }
+
+    public void deliver() {
+        if (this.status != ShipmentStatus.IN_TRANSIT) {
+            throw new InvalidShipmentStateTransitionException(ShipmentStatus.DELIVERED, this.getStatus());
+        }
+        this.status = ShipmentStatus.DELIVERED;
+    }
+
+    public void cancel() {
+        if (this.status != ShipmentStatus.CREATED) {
+            throw new InvalidShipmentStateTransitionException(ShipmentStatus.CANCELLED, this.getStatus());
+        }
+        this.status = ShipmentStatus.CANCELLED;
+    }
 }

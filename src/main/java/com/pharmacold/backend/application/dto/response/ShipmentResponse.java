@@ -1,8 +1,6 @@
 package com.pharmacold.backend.application.dto.response;
 
-import com.pharmacold.backend.domain.enums.SensorStatus;
 import com.pharmacold.backend.domain.enums.ShipmentStatus;
-import com.pharmacold.backend.domain.model.SensorDevice;
 
 import java.math.BigDecimal;
 import java.time.Instant;

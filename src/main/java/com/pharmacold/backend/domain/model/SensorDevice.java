@@ -1,12 +1,15 @@
 package com.pharmacold.backend.domain.model;
 
 import com.pharmacold.backend.domain.enums.SensorStatus;
+import com.pharmacold.backend.domain.exception.InvalidSensorStateException;
+import com.pharmacold.backend.domain.exception.SensorNotAvailableException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.EnumSet;
 
 @Getter
 @Setter
@@ -38,4 +41,32 @@ public class SensorDevice extends BaseAuditableEntity {
 
     @Column(name = "last_calibrated_at")
     private Instant lastCalibratedAt;
+
+    public static SensorDevice create(String serialNumber, String model, Integer batteryPercentage) {
+        return SensorDevice.builder()
+                .serialNumber(serialNumber)
+                .model(model)
+                .batteryPercentage(batteryPercentage)
+                .status(SensorStatus.AVAILABLE)
+                .build();
+    }
+
+    public void calibrate() {
+        if (EnumSet.of(SensorStatus.ASSIGNED, SensorStatus.DECOMMISSIONED).contains(this.status)) {
+            throw new InvalidSensorStateException(this.status);
+        }
+        this.status = SensorStatus.AVAILABLE;
+        this.lastCalibratedAt = Instant.now();
+    }
+
+    public void assignToShipment() {
+        if (this.getStatus() != SensorStatus.AVAILABLE) {
+            throw new SensorNotAvailableException(this.getSerialNumber(), this.getStatus());
+        }
+        this.status = SensorStatus.ASSIGNED;
+    }
+
+    public void markForCalibration() {
+        this.status = SensorStatus.CALIBRATION_REQUIRED;
+    }
 }
