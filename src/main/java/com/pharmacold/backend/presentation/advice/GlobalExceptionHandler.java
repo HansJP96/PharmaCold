@@ -1,8 +1,6 @@
 package com.pharmacold.backend.presentation.advice;
 
-import com.pharmacold.backend.domain.exception.InvalidShipmentStateTransitionException;
-import com.pharmacold.backend.domain.exception.ResourceNotFoundException;
-import com.pharmacold.backend.domain.exception.SensorNotAvailableException;
+import com.pharmacold.backend.domain.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -28,12 +26,23 @@ public class GlobalExceptionHandler {
         return errorHandler;
     }
 
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ProblemDetail handleDuplicatedResourceException(DuplicateResourceException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        errorHandler.setTitle("Resource Duplicated");
+        errorHandler.setProperty("resourceName", ex.getResourceName());
+        errorHandler.setProperty("fieldIdName", ex.getFieldIdName());
+        errorHandler.setProperty("fieldIdValue", ex.getFieldIdValue());
+        errorHandler.setProperty("timestamp", ex.getTimestamp());
+        return errorHandler;
+    }
+
     @ExceptionHandler(SensorNotAvailableException.class)
     public ProblemDetail handleSensorNotAvailable(SensorNotAvailableException ex) {
         ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         errorHandler.setTitle("Sensor Conflict");
         errorHandler.setProperty("serialNumber", ex.getSerialNumber());
-        errorHandler.setProperty("actualState", ex.getActualState());
+        errorHandler.setProperty("currentState", ex.getActualState());
         errorHandler.setProperty("timestamp", ex.getTimestamp());
         return errorHandler;
     }
@@ -42,8 +51,17 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInvalidShipmentStateTransition(InvalidShipmentStateTransitionException ex) {
         ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
         errorHandler.setTitle("Invalid State Transition");
-        errorHandler.setProperty("requiredState", ex.getRequiredState());
-        errorHandler.setProperty("actualState", ex.getActualState());
+        errorHandler.setProperty("targetState", ex.getTargetState());
+        errorHandler.setProperty("currentState", ex.getCurrentState());
+        errorHandler.setProperty("timestamp", ex.getTimestamp());
+        return errorHandler;
+    }
+
+    @ExceptionHandler(InvalidSensorStateException.class)
+    public ProblemDetail handleInvalidCalibrationSensorStateException(InvalidSensorStateException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        errorHandler.setTitle("Invalid State for Calibration");
+        errorHandler.setProperty("currentState", ex.getCurrentState());
         errorHandler.setProperty("timestamp", ex.getTimestamp());
         return errorHandler;
     }

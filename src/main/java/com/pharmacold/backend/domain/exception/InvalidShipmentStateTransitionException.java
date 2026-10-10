@@ -6,12 +6,12 @@ import lombok.Getter;
 @Getter
 public class InvalidShipmentStateTransitionException extends DomainException {
 
-    private final ShipmentStatus requiredState;
-    private final ShipmentStatus actualState;
+    private final ShipmentStatus targetState;
+    private final ShipmentStatus currentState;
 
-    public InvalidShipmentStateTransitionException(ShipmentStatus requiredState, ShipmentStatus actualState){
-        super("The selected status [%s] is not allowed to set from [%s]".formatted(requiredState, actualState));
-        this.requiredState = requiredState;
-        this.actualState = actualState;
+    public InvalidShipmentStateTransitionException(ShipmentStatus targetState, ShipmentStatus currentState){
+        super("The selected shipment status [%s] is not allowed to set from [%s]".formatted(targetState, currentState));
+        this.targetState = targetState;
+        this.currentState = currentState;
     }
 }
