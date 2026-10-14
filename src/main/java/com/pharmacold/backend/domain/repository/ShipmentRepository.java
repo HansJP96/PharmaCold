@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
 
-    @EntityGraph(attributePaths = {"assignedSensor"})
+    @EntityGraph(attributePaths = {"assignedSensorId"})
     Optional<Shipment> findByTrackingNumber(String trackingNumber);
 
     Slice<Shipment> findByStatus(ShipmentStatus status, Pageable pageable);

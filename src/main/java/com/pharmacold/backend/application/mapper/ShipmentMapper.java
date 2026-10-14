@@ -16,6 +16,6 @@ public interface ShipmentMapper {
 
     Shipment toEntity(CreateShipmentRequest request);
 
-    @Mapping(source = "assignedSensor.id", target = "assignedSensor")
+    @Mapping(source = "assignedSensor.id", target = "assignedSensorId")
     ShipmentResponse toResponse(Shipment shipment);
 }

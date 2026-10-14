@@ -31,8 +31,8 @@ public class GlobalExceptionHandler {
         ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         errorHandler.setTitle("Resource Duplicated");
         errorHandler.setProperty("resourceName", ex.getResourceName());
-        errorHandler.setProperty("fieldIdName", ex.getFieldIdName());
-        errorHandler.setProperty("fieldIdValue", ex.getFieldIdValue());
+        errorHandler.setProperty("fieldName", ex.getFieldName());
+        errorHandler.setProperty("fieldValue", ex.getFieldValue());
         errorHandler.setProperty("timestamp", ex.getTimestamp());
         return errorHandler;
     }

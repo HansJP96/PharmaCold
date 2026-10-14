@@ -16,7 +16,7 @@ public record ShipmentResponse(
         BigDecimal maxTempCelsius,
         Integer maxAllowedExcursionMinutes,
         ShipmentStatus status,
-        Long assignedSensor,
+        Long assignedSensorId,
         Instant createdAt
 ) {
 }

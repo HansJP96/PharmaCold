@@ -23,7 +23,7 @@ public class SensorDeviceService {
     private final SensorDeviceMapper sensorDeviceMapper;
 
     @Transactional
-    public SensorDeviceResponse createSensorDevice(CreateSensorDeviceRequest request) {
+    public SensorDeviceResponse registerSensorDevice(CreateSensorDeviceRequest request) {
         if (sensorDeviceRepository.existsBySerialNumber(request.serialNumber())) {
             throw new DuplicateResourceException(SensorDevice.class.getSimpleName(), "serialNumber", request.serialNumber());
         }

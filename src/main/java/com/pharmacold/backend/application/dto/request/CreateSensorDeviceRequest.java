@@ -1,7 +1,9 @@
 package com.pharmacold.backend.application.dto.request;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
+@Builder
 public record CreateSensorDeviceRequest(
         @NotBlank
         @Pattern(regexp = "^IOT-SNS-\\d{5}$", message = "The serial must have the format IOT-SNS-XXXXX")

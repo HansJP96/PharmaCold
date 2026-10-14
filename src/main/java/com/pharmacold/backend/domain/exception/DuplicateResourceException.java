@@ -6,13 +6,13 @@ import lombok.Getter;
 public class DuplicateResourceException extends DomainException {
 
     private final String resourceName;
-    private final String fieldIdName;
-    private final Object fieldIdValue;
+    private final String fieldName;
+    private final Object fieldValue;
 
-    public DuplicateResourceException(String resourceName, String fieldIdName, Object fieldIdValue) {
-        super("%s identified with %s : '%s' already exists".formatted(resourceName, fieldIdName, fieldIdValue));
+    public DuplicateResourceException(String resourceName, String fieldName, Object fieldValue) {
+        super("%s identified with %s : '%s' already exists".formatted(resourceName, fieldName, fieldValue));
         this.resourceName = resourceName;
-        this.fieldIdName = fieldIdName;
-        this.fieldIdValue = fieldIdValue;
+        this.fieldName = fieldName;
+        this.fieldValue = fieldValue;
     }
 }

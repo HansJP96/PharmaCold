@@ -2,9 +2,11 @@ package com.pharmacold.backend.application.dto.request;
 
 import com.pharmacold.backend.application.dto.validator.ValidTemperatureRange;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 
+@Builder
 @ValidTemperatureRange
 public record CreateShipmentRequest(
         @NotBlank
