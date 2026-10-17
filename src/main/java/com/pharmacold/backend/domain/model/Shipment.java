@@ -1,12 +1,15 @@
 package com.pharmacold.backend.domain.model;
 
 import com.pharmacold.backend.domain.enums.ShipmentStatus;
+import com.pharmacold.backend.domain.exception.InconsistentTelemetrySensorException;
+import com.pharmacold.backend.domain.exception.InvalidShipmentStateException;
 import com.pharmacold.backend.domain.exception.InvalidShipmentStateTransitionException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -93,5 +96,46 @@ public class Shipment extends BaseAuditableEntity {
             throw new InvalidShipmentStateTransitionException(ShipmentStatus.CANCELLED, this.getStatus());
         }
         this.status = ShipmentStatus.CANCELLED;
+    }
+
+    public void compromise() {
+        if (ShipmentStatus.IN_TRANSIT != this.getStatus()) {
+            throw new InvalidShipmentStateTransitionException(ShipmentStatus.COMPROMISED, this.getStatus());
+        }
+        this.status = ShipmentStatus.COMPROMISED;
+    }
+
+
+    public TelemetryRecord recordTelemetry(SensorDevice reportingSensor,
+                                           BigDecimal temperatureCelsius, Double humidityPercentage,
+                                           Instant timestamp, Double latitude, Double longitude) {
+        this.verifyCanReceiveTelemetry();
+        this.verifyAssignedSensor(reportingSensor);
+        reportingSensor.verifyIsAssigned();
+        return TelemetryRecord.createRecord(this, reportingSensor, temperatureCelsius, humidityPercentage,
+                timestamp, latitude, longitude);
+    }
+
+    public void verifyCanReceiveTelemetry() {
+        if (ShipmentStatus.IN_TRANSIT != this.getStatus()) {
+            throw new InvalidShipmentStateException(this.trackingNumber, this.status);
+        }
+    }
+
+    public void verifyAssignedSensor(SensorDevice reportingSensor) {
+        if (this.assignedSensor == null || !this.assignedSensor.getId().equals(reportingSensor.getId())) {
+            throw new InconsistentTelemetrySensorException(
+                    reportingSensor.getSerialNumber(),
+                    this.assignedSensor != null ? this.assignedSensor.getSerialNumber() : "NONE"
+            );
+        }
+    }
+
+    public ThermalExcursion reportExcursion(BigDecimal recordedTemperature, Instant timestamp) {
+        ThermalExcursion thermalExcursion = ThermalExcursion.createRecord(recordedTemperature, timestamp, this);
+        if (thermalExcursion.isCritical()) {
+            this.compromise();
+        }
+        return thermalExcursion;
     }
 }

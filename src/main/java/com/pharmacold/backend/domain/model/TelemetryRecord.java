@@ -1,8 +1,9 @@
 package com.pharmacold.backend.domain.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.*;
 import lombok.*;
+import org.apache.commons.lang3.compare.ComparableUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,6 +32,8 @@ public class TelemetryRecord extends BaseAuditableEntity {
     @Column(name = "temperature_celsius", nullable = false)
     private BigDecimal temperatureCelsius;
 
+    @Max(value = 100, message = "Humidity percentage cannot exceed 100")
+    @Min(value = 0, message = "Humidity percentage cannot be negative")
     @Column(name = "humidity_percentage", nullable = false)
     private Double humidityPercentage;
 
@@ -48,4 +51,24 @@ public class TelemetryRecord extends BaseAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sensor_id", nullable = false)
     private SensorDevice sensorDispatcher;
+
+    public static TelemetryRecord createRecord(Shipment shipment, SensorDevice sensor,
+                                               BigDecimal temperatureCelsius, Double humidityPercentage,
+                                               Instant timestamp, Double latitude, Double longitude) {
+        return TelemetryRecord.builder()
+                .relatedShipment(shipment)
+                .sensorDispatcher(sensor)
+                .timestamp(timestamp)
+                .temperatureCelsius(temperatureCelsius)
+                .humidityPercentage(humidityPercentage)
+                .isExcursion(
+                        !ComparableUtils
+                                .is(temperatureCelsius)
+                                .between(shipment.getMinTempCelsius(), shipment.getMaxTempCelsius())
+                )
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
+
+    }
 }

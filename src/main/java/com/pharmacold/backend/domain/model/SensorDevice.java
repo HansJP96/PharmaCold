@@ -1,8 +1,8 @@
 package com.pharmacold.backend.domain.model;
 
 import com.pharmacold.backend.domain.enums.SensorStatus;
+import com.pharmacold.backend.domain.exception.InconsistentTelemetrySensorException;
 import com.pharmacold.backend.domain.exception.InvalidSensorStateException;
-import com.pharmacold.backend.domain.exception.SensorNotAvailableException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -53,15 +53,21 @@ public class SensorDevice extends BaseAuditableEntity {
 
     public void calibrate() {
         if (EnumSet.of(SensorStatus.ASSIGNED, SensorStatus.DECOMMISSIONED).contains(this.status)) {
-            throw new InvalidSensorStateException(this.status);
+            throw new InvalidSensorStateException(this.serialNumber, this.status);
         }
         this.status = SensorStatus.AVAILABLE;
         this.lastCalibratedAt = Instant.now();
     }
 
+    public void verifyIsAssigned() {
+        if (SensorStatus.ASSIGNED != this.status) {
+            throw new InvalidSensorStateException(this.serialNumber, this.status);
+        }
+    }
+
     public void assignToShipment() {
         if (this.getStatus() != SensorStatus.AVAILABLE) {
-            throw new SensorNotAvailableException(this.getSerialNumber(), this.getStatus());
+            throw new InvalidSensorStateException(this.serialNumber, this.status);
         }
         this.status = SensorStatus.ASSIGNED;
     }
