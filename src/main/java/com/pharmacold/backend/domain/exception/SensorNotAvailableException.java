@@ -4,14 +4,15 @@ import com.pharmacold.backend.domain.enums.SensorStatus;
 import lombok.Getter;
 
 @Getter
+@Deprecated
 public class SensorNotAvailableException extends DomainException {
 
     private final String serialNumber;
-    private final SensorStatus actualState;
+    private final SensorStatus currentState;
 
-    public SensorNotAvailableException(String serialNumber, SensorStatus actualState) {
-        super("Sensor with serial number [%s] is already in state [%s]".formatted(serialNumber, actualState));
+    public SensorNotAvailableException(String serialNumber, SensorStatus currentState) {
+        super("Sensor [%s] is already in state [%s]".formatted(serialNumber, currentState));
         this.serialNumber = serialNumber;
-        this.actualState = actualState;
+        this.currentState = currentState;
     }
 }

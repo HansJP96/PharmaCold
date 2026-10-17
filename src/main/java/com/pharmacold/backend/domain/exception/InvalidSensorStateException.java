@@ -6,10 +6,12 @@ import lombok.Getter;
 @Getter
 public class InvalidSensorStateException extends DomainException {
 
+    private final String serialNumber;
     private final SensorStatus currentState;
 
-    public InvalidSensorStateException(SensorStatus currentState){
-        super("The selected sensor state [%s] is not allowed to process".formatted(currentState));
+    public InvalidSensorStateException(String serialNumber, SensorStatus currentState) {
+        super("Sensor [%s] cannot perform operation because its status is [%s]".formatted(serialNumber, currentState));
+        this.serialNumber = serialNumber;
         this.currentState = currentState;
     }
 }

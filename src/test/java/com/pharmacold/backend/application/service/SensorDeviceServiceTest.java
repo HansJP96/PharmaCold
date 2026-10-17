@@ -8,7 +8,6 @@ import com.pharmacold.backend.domain.enums.SensorStatus;
 import com.pharmacold.backend.domain.exception.DuplicateResourceException;
 import com.pharmacold.backend.domain.exception.InvalidSensorStateException;
 import com.pharmacold.backend.domain.exception.ResourceNotFoundException;
-import com.pharmacold.backend.domain.exception.SensorNotAvailableException;
 import com.pharmacold.backend.domain.model.SensorDevice;
 import com.pharmacold.backend.domain.repository.SensorDeviceRepository;
 import org.assertj.core.api.AbstractThrowableAssert;
@@ -208,9 +207,9 @@ public class SensorDeviceServiceTest {
             );
 
             //ASSERT
-            ex.isInstanceOfSatisfying(SensorNotAvailableException.class, e -> {
+            ex.isInstanceOfSatisfying(InvalidSensorStateException.class, e -> {
                 assertThat(e.getSerialNumber()).isEqualTo(existingSensor.getSerialNumber());
-                assertThat(e.getActualState()).isEqualTo(existingSensor.getStatus());
+                assertThat(e.getCurrentState()).isEqualTo(existingSensor.getStatus());
             });
             verify(sensorDeviceRepository, never()).save(any());
         }

@@ -1,6 +1,7 @@
 package com.pharmacold.backend.presentation.advice;
 
 import com.pharmacold.backend.domain.exception.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -37,35 +38,6 @@ public class GlobalExceptionHandler {
         return errorHandler;
     }
 
-    @ExceptionHandler(SensorNotAvailableException.class)
-    public ProblemDetail handleSensorNotAvailable(SensorNotAvailableException ex) {
-        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        errorHandler.setTitle("Sensor Conflict");
-        errorHandler.setProperty("serialNumber", ex.getSerialNumber());
-        errorHandler.setProperty("currentState", ex.getActualState());
-        errorHandler.setProperty("timestamp", ex.getTimestamp());
-        return errorHandler;
-    }
-
-    @ExceptionHandler(InvalidShipmentStateTransitionException.class)
-    public ProblemDetail handleInvalidShipmentStateTransition(InvalidShipmentStateTransitionException ex) {
-        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        errorHandler.setTitle("Invalid State Transition");
-        errorHandler.setProperty("targetState", ex.getTargetState());
-        errorHandler.setProperty("currentState", ex.getCurrentState());
-        errorHandler.setProperty("timestamp", ex.getTimestamp());
-        return errorHandler;
-    }
-
-    @ExceptionHandler(InvalidSensorStateException.class)
-    public ProblemDetail handleInvalidCalibrationSensorStateException(InvalidSensorStateException ex) {
-        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        errorHandler.setTitle("Invalid State for Calibration");
-        errorHandler.setProperty("currentState", ex.getCurrentState());
-        errorHandler.setProperty("timestamp", ex.getTimestamp());
-        return errorHandler;
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationErrors(MethodArgumentNotValidException ex) {
         ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
@@ -87,6 +59,48 @@ public class GlobalExceptionHandler {
         ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         errorHandler.setTitle("Unexpected Error");
         errorHandler.setProperty("timestamp", Instant.now());
+        return errorHandler;
+    }
+
+    //SENSOR
+    @ExceptionHandler(InvalidSensorStateException.class)
+    public ProblemDetail handleInvalidSensorStateException(InvalidSensorStateException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        errorHandler.setTitle("Invalid State to handle the sensor");
+        errorHandler.setProperty("serialNumber", ex.getSerialNumber());
+        errorHandler.setProperty("currentState", ex.getCurrentState());
+        errorHandler.setProperty("timestamp", ex.getTimestamp());
+        return errorHandler;
+    }
+
+    @ExceptionHandler(InconsistentTelemetrySensorException.class)
+    public ProblemDetail handleInconsistentTelemetrySensorException(InconsistentTelemetrySensorException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        errorHandler.setTitle("Inconsistency between sensor for telemetry and shipment");
+        errorHandler.setProperty("associatedSensor", ex.getTelemetrySensor());
+        errorHandler.setProperty("shipmentAssignedSensor", ex.getShipmentAssignedSensor());
+        errorHandler.setProperty("timestamp", ex.getTimestamp());
+        return errorHandler;
+    }
+
+    //SHIPMENT
+    @ExceptionHandler(InvalidShipmentStateTransitionException.class)
+    public ProblemDetail handleInvalidShipmentStateTransition(InvalidShipmentStateTransitionException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        errorHandler.setTitle("Invalid State Transition");
+        errorHandler.setProperty("targetState", ex.getTargetState());
+        errorHandler.setProperty("currentState", ex.getCurrentState());
+        errorHandler.setProperty("timestamp", ex.getTimestamp());
+        return errorHandler;
+    }
+
+    @ExceptionHandler(InvalidShipmentStateException.class)
+    public ProblemDetail handleInvalidShipmentStateException(InvalidShipmentStateException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        errorHandler.setTitle("Invalid State to handle the shipment");
+        errorHandler.setProperty("trackingNumber", ex.getTrackingNumber());
+        errorHandler.setProperty("currentState", ex.getCurrentState());
+        errorHandler.setProperty("timestamp", ex.getTimestamp());
         return errorHandler;
     }
 }
