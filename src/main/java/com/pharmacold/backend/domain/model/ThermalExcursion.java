@@ -2,6 +2,7 @@ package com.pharmacold.backend.domain.model;
 
 import com.pharmacold.backend.domain.enums.ExcursionSeverity;
 import com.pharmacold.backend.domain.enums.ExcursionStatus;
+import com.pharmacold.backend.domain.event.ThermalExcursionDetectedEvent;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.*;
@@ -72,5 +73,16 @@ public class ThermalExcursion extends BaseAuditableEntity {
 
     public boolean isCritical() {
         return ExcursionSeverity.CRITICAL == this.getSeverity();
+    }
+
+    public ThermalExcursionDetectedEvent toThermalExcursionDetectedEvent() {
+        return ThermalExcursionDetectedEvent.builder()
+                .detectedAt(this.detectedAt)
+                .recordedTemperature(this.recordedTemperature)
+                .severity(this.severity)
+                .trackingNumber(this.compromisedShipment.getTrackingNumber())
+                .minTempCelsius(this.compromisedShipment.getMinTempCelsius())
+                .maxTempCelsius(this.compromisedShipment.getMaxTempCelsius())
+                .build();
     }
 }

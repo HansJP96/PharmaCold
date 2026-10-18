@@ -4,6 +4,7 @@ import com.pharmacold.backend.domain.model.Shipment;
 import com.pharmacold.backend.domain.model.ThermalExcursion;
 import com.pharmacold.backend.domain.repository.ThermalExcursionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +17,13 @@ public class ThermalExcursionService {
 
     private final ThermalExcursionRepository thermalExcursionRepository;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Transactional
     public ThermalExcursion generateThermalExcursionRecord(BigDecimal recordedTemperature, Instant timestamp, Shipment shipment) {
         ThermalExcursion thermalExcursion = shipment.reportExcursion(recordedTemperature, timestamp);
-        return thermalExcursionRepository.save(thermalExcursion);
+        ThermalExcursion savedThermalExcursion = thermalExcursionRepository.save(thermalExcursion);
+        eventPublisher.publishEvent(savedThermalExcursion.toThermalExcursionDetectedEvent());
+        return savedThermalExcursion;
     }
 }
