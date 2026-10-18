@@ -5,3 +5,10 @@ spring:
     active: dev
   jpa:
     open-in-view: false
+
+retry:
+  notifications:
+    delay: 1000
+    multiplier: 2
+    maxAttempts: 3
+    maxDelay: 8000
