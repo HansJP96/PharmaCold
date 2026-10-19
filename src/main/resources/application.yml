@@ -12,3 +12,10 @@ retry:
     multiplier: 2
     maxAttempts: 3
     maxDelay: 8000
+
+api-clients:
+  fleet:
+    webhook:
+      base-url: "https://fleet.logistics.com/api/v1"
+      connect-timeout-ms: 2000
+      read-timeout-ms: 4000

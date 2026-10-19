@@ -22,7 +22,7 @@ public class NotificationAsyncExceptionHandlerStrategy implements AsyncException
         for (Object param : params) {
             if (param instanceof TrackableNotification notification) {
                 log.error(
-                        "NOTIFICATION ASYNC FAILURE | Method: {}.{}() | Context: [{}] | Error: {}",
+                        "--- NOTIFICATION ASYNC FAILURE | Method: {}.{}() | Context: [{}] | Error: {} ---",
                         method.getDeclaringClass().getSimpleName(),
                         method.getName(),
                         notification.getContextSummary(),

@@ -20,6 +20,7 @@ public class ExcursionDetectedEmailStrategy implements NotificationStrategy<Ther
     @Retryable(
             retryFor = {ResourceAccessException.class, ConnectException.class, SocketTimeoutException.class},
             noRetryFor = {HttpClientErrorException.class},
+            maxAttemptsExpression = "${retry.notifications.maxAttempts}",
             backoff = @Backoff(
                     delayExpression = "${retry.notifications.delay}",
                     multiplierExpression = "${retry.notifications.multiplier}",
@@ -30,6 +31,8 @@ public class ExcursionDetectedEmailStrategy implements NotificationStrategy<Ther
     @Async("notificationTaskExecutor")
     @Override
     public void send(ThermalExcursionDetectedEvent event) {
+        log.info("- [EMAIL NOTIFICATION] Reporting incident regarding the shipment: {} -", event.trackingNumber());
+
         String sender = "backend@gmail.com";
         String recipient = "people@gmail.com";
         String subject = "Thermal Excursion Detected from shipment %s";
