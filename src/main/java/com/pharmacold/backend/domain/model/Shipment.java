@@ -4,18 +4,19 @@ import com.pharmacold.backend.domain.enums.ShipmentStatus;
 import com.pharmacold.backend.domain.exception.InconsistentTelemetrySensorException;
 import com.pharmacold.backend.domain.exception.InvalidShipmentStateException;
 import com.pharmacold.backend.domain.exception.InvalidShipmentStateTransitionException;
+import com.pharmacold.backend.domain.exception.InvalidTemperatureRangeException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.*;
+import org.apache.commons.lang3.compare.ComparableUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(access = AccessLevel.PACKAGE)
 @Entity
 @Table(name = "shipments")
 public class Shipment extends BaseAuditableEntity {
@@ -63,6 +64,13 @@ public class Shipment extends BaseAuditableEntity {
 
     public static Shipment create(String trackingNumber, String originFacility, String destinationFacility, String productName,
                                   String batchNumber, BigDecimal minTempCelsius, BigDecimal maxTempCelsius, Integer maxAllowedExcursionMinutes) {
+        if (ComparableUtils.is(minTempCelsius).greaterThanOrEqualTo(maxTempCelsius)) {
+            throw new InvalidTemperatureRangeException(
+                    trackingNumber,
+                    minTempCelsius.toPlainString(),
+                    maxTempCelsius.toPlainString()
+            );
+        }
         return Shipment.builder()
                 .trackingNumber(trackingNumber)
                 .originFacility(originFacility)
