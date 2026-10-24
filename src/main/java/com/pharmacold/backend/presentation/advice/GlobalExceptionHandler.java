@@ -2,8 +2,10 @@ package com.pharmacold.backend.presentation.advice;
 
 import com.pharmacold.backend.domain.exception.*;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -101,6 +103,30 @@ public class GlobalExceptionHandler {
         errorHandler.setProperty("trackingNumber", ex.getTrackingNumber());
         errorHandler.setProperty("currentState", ex.getCurrentState());
         errorHandler.setProperty("timestamp", ex.getTimestamp());
+        return errorHandler;
+    }
+
+    @ExceptionHandler(InvalidTemperatureRangeException.class)
+    public ProblemDetail handleInvalidTemperatureRangeException(InvalidTemperatureRangeException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        errorHandler.setTitle("Invalid assigned temperature range");
+        errorHandler.setProperty("trackingNumber", ex.getTrackingNumber());
+        errorHandler.setProperty("minTemperature", ex.getMinTemperature());
+        errorHandler.setProperty("maxTemperature", ex.getMaxTemperature());
+        return errorHandler;
+    }
+
+    //CONCURRENCY
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ProblemDetail handleOptimisticLockingFailureException(OptimisticLockingFailureException ex) {
+        ProblemDetail errorHandler = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        errorHandler.setTitle("Concurrent update conflict");
+        errorHandler.setDetail("The resource was modified concurrently by another process");
+        if (ex instanceof ObjectOptimisticLockingFailureException optimisticObject) {
+            errorHandler.setProperty("resourceName", optimisticObject.getPersistentClassName());
+            errorHandler.setProperty("resourceId", optimisticObject.getIdentifier());
+        }
+        errorHandler.setProperty("timestamp", Instant.now());
         return errorHandler;
     }
 }
