@@ -12,10 +12,9 @@ import java.time.Instant;
 import java.util.EnumSet;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(access = AccessLevel.PACKAGE)
 @Entity
 @Table(name = "sensor_devices")
 public class SensorDevice extends BaseAuditableEntity {

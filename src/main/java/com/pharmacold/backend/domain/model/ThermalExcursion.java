@@ -13,10 +13,9 @@ import java.time.Instant;
 import java.util.function.Predicate;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(access = AccessLevel.PACKAGE)
 @Entity
 @Table(name = "thermal_excursions")
 public class ThermalExcursion extends BaseAuditableEntity {

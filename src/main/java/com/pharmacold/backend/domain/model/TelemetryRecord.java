@@ -9,10 +9,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(access = AccessLevel.PACKAGE)
 @Entity
 @Table(name = "telemetry_records",
         indexes = {
