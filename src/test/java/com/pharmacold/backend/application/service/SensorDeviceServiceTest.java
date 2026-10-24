@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.Optional;
 
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -40,9 +41,6 @@ public class SensorDeviceServiceTest {
     @InjectMocks
     private SensorDeviceService sensorDeviceService;
 
-    @Captor
-    private ArgumentCaptor<SensorDevice> sensorDeviceCaptor;
-
     @Nested
     @DisplayName("Scenarios: Register a new Sensor")
     class RegisterSensorTest {
@@ -51,22 +49,18 @@ public class SensorDeviceServiceTest {
         @DisplayName("Should create a new sensor in state available when a sensor is registered")
         public void shouldCreateNewSensorAvailable_whenSensorIsRegistered() {
             //ARRANGE
-            CreateSensorDeviceRequest sensorRequest = getSensorRequest();
+            CreateSensorDeviceRequest sensorRequest = getValidSensorRequest();
+            SensorDevice createdSensor = getAvailableSensor();
             when(sensorDeviceRepository.existsBySerialNumber(sensorRequest.serialNumber())).thenReturn(false);
-            when(sensorDeviceRepository.save(any(SensorDevice.class))).thenAnswer(invocation -> {
-                SensorDevice insideSensor = invocation.getArgument(0);
-                insideSensor.setId(1L);
-                return insideSensor;
-            });
+            when(sensorDeviceRepository.save(any(SensorDevice.class))).thenReturn(createdSensor);
 
             //ACT
             SensorDeviceResponse response = sensorDeviceService.registerSensorDevice(sensorRequest);
 
             //ASSERT
-            verify(sensorDeviceRepository).save(sensorDeviceCaptor.capture());
             assertThat(response).isNotNull().satisfies(sensorResponse ->
                     {
-                        assertThat(sensorResponse.id()).isEqualTo(sensorDeviceCaptor.getValue().getId());
+                        assertThat(sensorResponse.id()).isEqualTo(createdSensor.getId());
                         assertThat(sensorResponse.serialNumber()).isEqualTo(sensorRequest.serialNumber());
                         assertThat(sensorResponse.model()).isEqualTo(sensorRequest.model());
                         assertThat(sensorResponse.batteryPercentage()).isEqualTo(sensorRequest.batteryPercentage());
@@ -80,7 +74,7 @@ public class SensorDeviceServiceTest {
         @DisplayName("Should throw DuplicateResourceException when a sensor with a specified serial number already exists")
         public void shouldThrowException_whenSensorAlreadyExists() {
             //ARRANGE
-            CreateSensorDeviceRequest sensorRequest = getSensorRequest();
+            CreateSensorDeviceRequest sensorRequest = getValidSensorRequest();
             when(sensorDeviceRepository.existsBySerialNumber(sensorRequest.serialNumber())).thenReturn(true);
 
             //ACT
@@ -100,15 +94,15 @@ public class SensorDeviceServiceTest {
     @DisplayName("Scenarios: Calibrating a Sensor")
     class CalibrationSensorTest {
 
-        @ParameterizedTest(name = "Should update sensor state to AVAILABLE when the sensor was calibrated from state [{0}]")
+        @ParameterizedTest(name = "Should update sensor state to AVAILABLE when the sensor was calibrated from state {0}")
         @EnumSource(
-                mode = EnumSource.Mode.EXCLUDE,
                 value = SensorStatus.class,
+                mode = EnumSource.Mode.EXCLUDE,
                 names = {"ASSIGNED", "DECOMMISSIONED"}
         )
         public void shouldUpdateStateToAvailable_whenSensorIsCalibratedInState(SensorStatus sensorStatus) {
             //ARRANGE
-            SensorDevice existingSensor = getCreatedSensorWithStatus(sensorStatus);
+            SensorDevice existingSensor = getSensorWithStatus(sensorStatus);
             when(sensorDeviceRepository.findById(existingSensor.getId())).thenReturn(Optional.of(existingSensor));
             when(sensorDeviceRepository.save(any(SensorDevice.class))).thenReturn(existingSensor);
 
@@ -131,15 +125,15 @@ public class SensorDeviceServiceTest {
             verify(sensorDeviceRepository).save(existingSensor);
         }
 
-        @ParameterizedTest(name = "Should throw InvalidSensorStateException when trying to calibrate a sensor in status [{0}]")
+        @ParameterizedTest(name = "Should throw InvalidSensorStateException when trying to calibrate a sensor in status {0}")
         @EnumSource(
-                mode = EnumSource.Mode.INCLUDE,
                 value = SensorStatus.class,
+                mode = EnumSource.Mode.INCLUDE,
                 names = {"ASSIGNED", "DECOMMISSIONED"}
         )
         public void shouldThrowException_whenCalibrateSensorInStatus(SensorStatus sensorStatus) {
             //ARRANGE
-            SensorDevice existingSensor = getCreatedSensorWithStatus(sensorStatus);
+            SensorDevice existingSensor = getSensorWithStatus(sensorStatus);
             when(sensorDeviceRepository.findById(existingSensor.getId())).thenReturn(Optional.of(existingSensor));
 
             //ACT
@@ -181,7 +175,7 @@ public class SensorDeviceServiceTest {
         @DisplayName("Should update sensor state when the sensor is assigned to a shipment")
         public void shouldUpdateSensorState_whenSensorIsAssignedToShipment() {
             //ARRANGE
-            SensorDevice sensorDevice = getCreatedSensorWithStatus(SensorStatus.AVAILABLE);
+            SensorDevice sensorDevice = getAvailableSensor();
 
             //ACT
             sensorDeviceService.assignSensorToShipment(sensorDevice);
@@ -191,15 +185,15 @@ public class SensorDeviceServiceTest {
             verify(sensorDeviceRepository).save(sensorDevice);
         }
 
-        @ParameterizedTest(name = "Should throw SensorNotAvailableException when the sensor is not AVAILABLE to assign to a shipment")
+        @ParameterizedTest(name = "Should throw SensorNotAvailableException when trying to assign sensor in status {0} to shipment")
         @EnumSource(
                 mode = EnumSource.Mode.EXCLUDE,
                 value = SensorStatus.class,
                 names = {"AVAILABLE"}
         )
-        public void shouldThrowException_whenSensorIsNotAvailableToShipment(SensorStatus sensorStatus) {
+        public void shouldThrowException_whenTriyngToAssignSensorInStatusToShipment(SensorStatus sensorStatus) {
             //ARRANGE
-            SensorDevice existingSensor = getCreatedSensorWithStatus(sensorStatus);
+            SensorDevice existingSensor = getSensorWithStatus(sensorStatus);
 
             //ACT
             AbstractThrowableAssert<?, ?> ex = assertThatThrownBy(
@@ -218,7 +212,7 @@ public class SensorDeviceServiceTest {
         @DisplayName("Should update sensor state when the sensor is released from a shipment (delivered)")
         public void shouldUpdateSensorState_whenSensorIsReleasedFromShipment() {
             //ARRANGE
-            SensorDevice existingSensor = getCreatedSensorWithStatus(SensorStatus.ASSIGNED);
+            SensorDevice existingSensor = getAssignedSensor();
 
             //ACT
             sensorDeviceService.markSensorForCalibration(existingSensor);
@@ -227,20 +221,5 @@ public class SensorDeviceServiceTest {
             assertThat(existingSensor.getStatus()).isEqualTo(SensorStatus.CALIBRATION_REQUIRED);
             verify(sensorDeviceRepository).save(existingSensor);
         }
-    }
-
-    private CreateSensorDeviceRequest getSensorRequest() {
-        return new CreateSensorDeviceRequest("IOT-SNS-00001", "Samsung XPA", 100);
-    }
-
-    private SensorDevice getCreatedSensorWithStatus(SensorStatus sensorStatus) {
-        return SensorDevice.builder()
-                .id(2L)
-                .serialNumber("IOT-SNS-00001")
-                .model("Samsung XPA")
-                .batteryPercentage(100)
-                .status(sensorStatus)
-                .lastCalibratedAt(null)
-                .build();
     }
 }

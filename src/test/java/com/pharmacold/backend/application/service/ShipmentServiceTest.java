@@ -4,7 +4,6 @@ import com.pharmacold.backend.application.dto.request.CreateShipmentRequest;
 import com.pharmacold.backend.application.dto.response.ShipmentResponse;
 import com.pharmacold.backend.application.mapper.ShipmentMapper;
 import com.pharmacold.backend.application.mapper.ShipmentMapperImpl;
-import com.pharmacold.backend.domain.enums.SensorStatus;
 import com.pharmacold.backend.domain.enums.ShipmentStatus;
 import com.pharmacold.backend.domain.exception.*;
 import com.pharmacold.backend.domain.model.SensorDevice;
@@ -20,9 +19,10 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getAvailableSensor;
+import static com.pharmacold.backend.domain.model.ShipmentFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,9 +44,6 @@ public class ShipmentServiceTest {
     @Mock
     private SensorDeviceService sensorDeviceService;
 
-    @Captor
-    private ArgumentCaptor<Shipment> shipmentCaptor;
-
     @Nested
     @DisplayName("Scenarios: Creating Shipment")
     class CreateShipmentTest {
@@ -55,21 +52,17 @@ public class ShipmentServiceTest {
         @DisplayName("Should create a new shipment in DB when shipment data are received")
         public void shouldCreateNewShipment_whenShipmentDataReceived() {
             //ARRANGE
-            CreateShipmentRequest shipmentRequest = getShipmentRequest();
+            CreateShipmentRequest shipmentRequest = getValidShipmentRequest();
+            Shipment shipmentCreated = getCreatedShipment();
             when(shipmentRepository.existsByTrackingNumber(shipmentRequest.trackingNumber())).thenReturn(false);
-            when(shipmentRepository.save(any(Shipment.class))).thenAnswer(invocation -> {
-                Shipment shipmentCreated = invocation.getArgument(0);
-                shipmentCreated.setId(1L);
-                return shipmentCreated;
-            });
+            when(shipmentRepository.save(any(Shipment.class))).thenReturn(shipmentCreated);
 
             //ACT
             ShipmentResponse shipmentResponse = shipmentService.createShipment(shipmentRequest);
 
             //ASSERT
-            verify(shipmentRepository).save(shipmentCaptor.capture());
             assertThat(shipmentResponse).isNotNull().satisfies(response -> {
-                assertThat(response.id()).isEqualTo(shipmentCaptor.getValue().getId());
+                assertThat(response.id()).isEqualTo(shipmentCreated.getId());
                 assertThat(response.trackingNumber()).isEqualTo(shipmentRequest.trackingNumber());
                 assertThat(response.productName()).isEqualTo(shipmentRequest.productName());
                 assertThat(response.originFacility()).isEqualTo(shipmentRequest.originFacility());
@@ -87,7 +80,7 @@ public class ShipmentServiceTest {
         @DisplayName("Should throw DuplicateResourceException when a shipment with a specified tracking number already exists")
         public void shouldThrowException_whenShipmentWithTrackingNumberAlreadyExists() {
             //ARRANGE
-            CreateShipmentRequest shipmentRequest = getShipmentRequest();
+            CreateShipmentRequest shipmentRequest = getValidShipmentRequest();
             when(shipmentRepository.existsByTrackingNumber(shipmentRequest.trackingNumber())).thenReturn(true);
 
             //ACT
@@ -101,6 +94,25 @@ public class ShipmentServiceTest {
             });
             verify(shipmentRepository, never()).save(any(Shipment.class));
         }
+
+        @Test
+        @DisplayName("Should throw InvalidTemperatureRangeException when a shipment with a specified temperature range is invalid")
+        public void shouldThrowException_whenShipmentWithSpecifiedTemperatureRangeIsInvalid() {
+            //ARRANGE
+            CreateShipmentRequest shipmentRequest = getInvalidShipmentRequest();
+            when(shipmentRepository.existsByTrackingNumber(shipmentRequest.trackingNumber())).thenReturn(false);
+
+            //ACT
+            AbstractThrowableAssert<?, ?> ex = assertThatThrownBy(() -> shipmentService.createShipment(shipmentRequest));
+
+            //ASSERT
+            ex.isInstanceOfSatisfying(InvalidTemperatureRangeException.class, e -> {
+                assertThat(e.getTrackingNumber()).isEqualTo(shipmentRequest.trackingNumber());
+                assertThat(e.getMinTemperature()).isEqualTo(shipmentRequest.minTempCelsius().toPlainString());
+                assertThat(e.getMaxTemperature()).isEqualTo(shipmentRequest.minTempCelsius().toPlainString());
+            });
+            verify(shipmentRepository, never()).save(any(Shipment.class));
+        }
     }
 
     @Nested
@@ -111,34 +123,35 @@ public class ShipmentServiceTest {
         @DisplayName("Should start a shipment successfully when the shipment is in the CREATED status")
         public void shouldStartShipment_whenShipmentIsCreated() {
             //ARRANGE
-            Shipment shipment = getExistingShipmentWithStatusAndSensor(ShipmentStatus.CREATED, null);
-            SensorDevice sensor = getExistingSensorWithStatus(SensorStatus.AVAILABLE);
+            SensorDevice sensor = getAvailableSensor();
+            Shipment shipment = getCreatedShipment();
             when(shipmentRepository.findById(shipment.getId())).thenReturn(Optional.of(shipment));
             when(sensorDeviceService.findSensorDeviceBySerialNumber(sensor.getSerialNumber())).thenReturn(sensor);
             when(shipmentRepository.save(shipment)).thenReturn(shipment);
 
             //ACT
-            ShipmentResponse shipmentResponse = shipmentService.startTransit(shipment.getId(), sensor.getSerialNumber());
+            ShipmentResponse shipmentResponse =
+                    shipmentService.startTransit(shipment.getId(), sensor.getSerialNumber());
 
             //ASSERT
             assertThat(shipmentResponse.status()).isEqualTo(ShipmentStatus.IN_TRANSIT);
-            assertThat(shipmentResponse.assignedSensorId()).isNotNull().isEqualTo(sensor.getId());
+            assertThat(shipmentResponse.assignedSensorId()).isNotNull().isEqualTo(shipment.getAssignedSensor().getId());
 
             verify(shipmentRepository).save(shipment);
-            verify(sensorDeviceService, times(1)).assignSensorToShipment(eq(sensor));
+            verify(sensorDeviceService, times(1)).assignSensorToShipment(shipment.getAssignedSensor());
         }
 
         @Test
         @DisplayName("Should throw ResourceNotFoundException when a shipment with id does not exist")
         public void shouldThrowException_whenShipmentIdDoesNotExist() {
             //ARRANGE
-            SensorDevice sensorDevice = getExistingSensorWithStatus(SensorStatus.AVAILABLE);
+            SensorDevice sensor = getAvailableSensor();
             Long shipmentId = 1L;
             when(shipmentRepository.findById(shipmentId)).thenReturn(Optional.empty());
 
             //ACT
             AbstractThrowableAssert<?, ?> ex = assertThatThrownBy(
-                    () -> shipmentService.startTransit(shipmentId, sensorDevice.getSerialNumber())
+                    () -> shipmentService.startTransit(shipmentId, sensor.getSerialNumber())
             );
 
             //ASSERT
@@ -155,27 +168,27 @@ public class ShipmentServiceTest {
         @DisplayName("Should not start the shipment when a sensor assign fails")
         public void shouldNotStartShipment_whenSensorIsNotAvailable() {
             //ARRANGE
-            SensorDevice existingSensor = getExistingSensorWithStatus(SensorStatus.ASSIGNED);
-            Shipment existingShipment = getExistingShipmentWithStatusAndSensor(ShipmentStatus.CREATED, existingSensor);
+            SensorDevice sensor = getAvailableSensor();
+            Shipment existingShipment = getCreatedShipment();
             when(shipmentRepository.findById(existingShipment.getId())).thenReturn(Optional.of(existingShipment));
-            when(sensorDeviceService.findSensorDeviceBySerialNumber(existingSensor.getSerialNumber())).thenReturn(existingSensor);
-            doThrow(new InvalidSensorStateException(existingSensor.getSerialNumber(), existingSensor.getStatus()))
-                    .when(sensorDeviceService).assignSensorToShipment(existingSensor);
+            when(sensorDeviceService.findSensorDeviceBySerialNumber(sensor.getSerialNumber())).thenReturn(sensor);
+            doThrow(new InvalidSensorStateException(sensor.getSerialNumber(), sensor.getStatus()))
+                    .when(sensorDeviceService).assignSensorToShipment(sensor);
 
             //ACT
             AbstractThrowableAssert<?, ?> ex = assertThatThrownBy(
-                    () -> shipmentService.startTransit(existingShipment.getId(), existingSensor.getSerialNumber())
+                    () -> shipmentService.startTransit(existingShipment.getId(), sensor.getSerialNumber())
             );
 
             //ASSERT
             ex.isInstanceOfSatisfying(InvalidSensorStateException.class, e -> {
-                assertThat(e.getSerialNumber()).isEqualTo(existingSensor.getSerialNumber());
-                assertThat(e.getCurrentState()).isEqualTo(existingSensor.getStatus());
+                assertThat(e.getSerialNumber()).isEqualTo(sensor.getSerialNumber());
+                assertThat(e.getCurrentState()).isEqualTo(sensor.getStatus());
             });
             verify(shipmentRepository, never()).save(any(Shipment.class));
         }
 
-        @ParameterizedTest(name = "Should throw InvalidShipmentStateTransitionException when a shipment to transit is in a status [{0}]")
+        @ParameterizedTest(name = "Should throw InvalidShipmentStateTransitionException when a shipment to transit is in a status {0}")
         @EnumSource(
                 mode = EnumSource.Mode.EXCLUDE,
                 value = ShipmentStatus.class,
@@ -183,14 +196,14 @@ public class ShipmentServiceTest {
         )
         public void shouldThrowException_whenShipmentToTransitIsInState(ShipmentStatus shipmentStatus) {
             //ARRANGE
-            SensorDevice sensorDevice = getExistingSensorWithStatus(SensorStatus.AVAILABLE);
-            Shipment existingShipment = getExistingShipmentWithStatusAndSensor(shipmentStatus, sensorDevice);
+            SensorDevice sensor = getAvailableSensor();
+            Shipment existingShipment = getShipmentWithStatus(shipmentStatus);
             when(shipmentRepository.findById(existingShipment.getId())).thenReturn(Optional.of(existingShipment));
-            when(sensorDeviceService.findSensorDeviceBySerialNumber(sensorDevice.getSerialNumber())).thenReturn(sensorDevice);
+            when(sensorDeviceService.findSensorDeviceBySerialNumber(sensor.getSerialNumber())).thenReturn(sensor);
 
             //ACT
             AbstractThrowableAssert<?, ?> ex = assertThatThrownBy(
-                    () -> shipmentService.startTransit(existingShipment.getId(), sensorDevice.getSerialNumber())
+                    () -> shipmentService.startTransit(existingShipment.getId(), sensor.getSerialNumber())
             );
 
             //ASSERT
@@ -198,7 +211,6 @@ public class ShipmentServiceTest {
                 assertThat(e.getTargetState()).isEqualTo(ShipmentStatus.IN_TRANSIT);
                 assertThat(e.getCurrentState()).isEqualTo(existingShipment.getStatus());
             });
-//            verify(sensorDeviceService, never()).assignSensorToShipment(any(SensorDevice.class));
             verify(shipmentRepository, never()).save(any(Shipment.class));
         }
     }
@@ -211,7 +223,7 @@ public class ShipmentServiceTest {
         @DisplayName("Should deliver the shipment successfully when the shipment is in status IN_TRANSIT")
         public void shouldDeliverShipmentSuccessfully_whenShipmentIsInStatusInTransit() {
             //ARRANGE
-            Shipment shipment = getExistingShipmentWithStatusAndSensor(ShipmentStatus.IN_TRANSIT, getExistingSensorWithStatus(SensorStatus.AVAILABLE));
+            Shipment shipment = getInTransitShipment();
             when(shipmentRepository.findByTrackingNumber(shipment.getTrackingNumber())).thenReturn(Optional.of(shipment));
             when(shipmentRepository.save(shipment)).thenReturn(shipment);
 
@@ -225,7 +237,7 @@ public class ShipmentServiceTest {
             verify(shipmentRepository).save(shipment);
         }
 
-        @ParameterizedTest(name = "Should throw InvalidShipmentStateTransitionException when a shipment to delivery is in a status [{0}]")
+        @ParameterizedTest(name = "Should throw InvalidShipmentStateTransitionException when a shipment to delivery is in a status {0}")
         @EnumSource(
                 mode = EnumSource.Mode.EXCLUDE,
                 value = ShipmentStatus.class,
@@ -233,7 +245,7 @@ public class ShipmentServiceTest {
         )
         public void shouldThrowException_whenShipmentToDeliveryIsInState(ShipmentStatus shipmentStatus) {
             //ARRANGE
-            Shipment existingShipment = getExistingShipmentWithStatusAndSensor(shipmentStatus, getExistingSensorWithStatus(SensorStatus.AVAILABLE));
+            Shipment existingShipment = getShipmentWithStatus(shipmentStatus);
             when(shipmentRepository.findByTrackingNumber(existingShipment.getTrackingNumber())).thenReturn(Optional.of(existingShipment));
 
             //ACT
@@ -254,7 +266,6 @@ public class ShipmentServiceTest {
         @DisplayName("Should throw ResourceNotFoundException when a shipment by tracking number does not exist")
         public void shouldThrowException_whenShipmentTrackingNumberDoesNotExist() {
             //ARRANGE
-            SensorDevice sensorDevice = getExistingSensorWithStatus(SensorStatus.AVAILABLE);
             String trackingNumber = "IOT-SNS-00005";
             when(shipmentRepository.findByTrackingNumber(trackingNumber)).thenReturn(Optional.empty());
 
@@ -282,7 +293,7 @@ public class ShipmentServiceTest {
         @DisplayName("Should cancel a shipment successfully when the shipment is in status CREATED")
         public void shouldCancelShipmentSuccessfully_whenShipmentIsInStatusCreated() {
             //ARRANGE
-            Shipment shipment = getExistingShipmentWithStatusAndSensor(ShipmentStatus.CREATED, null);
+            Shipment shipment = getCreatedShipment();
             when(shipmentRepository.findByTrackingNumber(shipment.getTrackingNumber())).thenReturn(Optional.of(shipment));
             when(shipmentRepository.save(shipment)).thenReturn(shipment);
 
@@ -294,7 +305,7 @@ public class ShipmentServiceTest {
             verify(shipmentRepository).save(shipment);
         }
 
-        @ParameterizedTest(name = "Should throw InvalidShipmentStateTransitionException when a shipment to cancel is in a status [{0}]")
+        @ParameterizedTest(name = "Should throw InvalidShipmentStateTransitionException when a shipment to cancel is in a status {0}")
         @EnumSource(
                 mode = EnumSource.Mode.EXCLUDE,
                 value = ShipmentStatus.class,
@@ -302,7 +313,7 @@ public class ShipmentServiceTest {
         )
         public void shouldThrowException_whenShipmentToCancelIsInStatus(ShipmentStatus shipmentStatus) {
             //ARRANGE
-            Shipment existingShipment = getExistingShipmentWithStatusAndSensor(shipmentStatus, null);
+            Shipment existingShipment = getShipmentWithStatus(shipmentStatus);
             when(shipmentRepository.findByTrackingNumber(existingShipment.getTrackingNumber())).thenReturn(Optional.of(existingShipment));
 
             //ACT
@@ -317,47 +328,5 @@ public class ShipmentServiceTest {
             });
             verify(shipmentRepository, never()).save(any(Shipment.class));
         }
-    }
-
-    private CreateShipmentRequest getShipmentRequest() {
-        return CreateShipmentRequest.builder()
-                .trackingNumber("PHARMA-2026-X89B")
-                .productName("Gyossillycus")
-                .originFacility("Pharma East")
-                .destinationFacility("Pharma West")
-                .batchNumber("15D2026")
-                .minTempCelsius(new BigDecimal("2.00"))
-                .maxTempCelsius(new BigDecimal("18.55"))
-                .maxAllowedExcursionMinutes(2)
-                .build();
-
-    }
-
-    private Shipment getExistingShipmentWithStatusAndSensor(ShipmentStatus shipmentStatus, SensorDevice sensor) {
-        return Shipment.builder()
-                .id(1L)
-                .trackingNumber("PHARMA-2026-X89B")
-                .productName("Gyossillycus")
-                .originFacility("Pharma East")
-                .destinationFacility("Pharma West")
-                .batchNumber("15D2026")
-                .status(shipmentStatus)
-                .minTempCelsius(new BigDecimal("1.00"))
-                .maxTempCelsius(new BigDecimal("22.00"))
-                .maxAllowedExcursionMinutes(1)
-                .assignedSensor(sensor)
-                .build();
-
-    }
-
-    private SensorDevice getExistingSensorWithStatus(SensorStatus status) {
-        return SensorDevice.builder()
-                .id(1L)
-                .serialNumber("IOT-SNS-00001")
-                .model("Samsung XPA")
-                .batteryPercentage(100)
-                .status(status)
-                .lastCalibratedAt(null)
-                .build();
     }
 }
