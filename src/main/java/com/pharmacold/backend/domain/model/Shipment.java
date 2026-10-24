@@ -7,7 +7,11 @@ import com.pharmacold.backend.domain.exception.InvalidShipmentStateTransitionExc
 import com.pharmacold.backend.domain.exception.InvalidTemperatureRangeException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.compare.ComparableUtils;
 
 import java.math.BigDecimal;

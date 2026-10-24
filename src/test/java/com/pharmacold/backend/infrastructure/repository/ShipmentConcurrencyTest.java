@@ -5,11 +5,14 @@ import com.pharmacold.backend.domain.model.Shipment;
 import com.pharmacold.backend.domain.repository.SensorDeviceRepository;
 import com.pharmacold.backend.domain.repository.ShipmentRepository;
 import com.pharmacold.backend.infrastructure.config.JpaAuditingConfig;
-import org.junit.jupiter.api.*;
-import org.springframework.context.annotation.Import;
-import org.springframework.dao.OptimisticLockingFailureException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.pharmacold.backend.domain.model.SensorDeviceFixture.*;
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getSensorToSave;
 import static com.pharmacold.backend.domain.model.ShipmentFixture.getShipmentToSave;
 import static org.assertj.core.api.Assertions.assertThat;
 

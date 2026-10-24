@@ -1,12 +1,22 @@
 package com.pharmacold.backend.domain.model;
 
 import com.pharmacold.backend.domain.enums.SensorStatus;
-import com.pharmacold.backend.domain.exception.InconsistentTelemetrySensorException;
 import com.pharmacold.backend.domain.exception.InvalidSensorStateException;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.EnumSet;

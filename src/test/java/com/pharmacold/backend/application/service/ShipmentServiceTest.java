@@ -5,7 +5,11 @@ import com.pharmacold.backend.application.dto.response.ShipmentResponse;
 import com.pharmacold.backend.application.mapper.ShipmentMapper;
 import com.pharmacold.backend.application.mapper.ShipmentMapperImpl;
 import com.pharmacold.backend.domain.enums.ShipmentStatus;
-import com.pharmacold.backend.domain.exception.*;
+import com.pharmacold.backend.domain.exception.DuplicateResourceException;
+import com.pharmacold.backend.domain.exception.InvalidSensorStateException;
+import com.pharmacold.backend.domain.exception.InvalidShipmentStateTransitionException;
+import com.pharmacold.backend.domain.exception.InvalidTemperatureRangeException;
+import com.pharmacold.backend.domain.exception.ResourceNotFoundException;
 import com.pharmacold.backend.domain.model.SensorDevice;
 import com.pharmacold.backend.domain.model.Shipment;
 import com.pharmacold.backend.domain.repository.ShipmentRepository;
@@ -16,17 +20,28 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
 import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getAvailableSensor;
-import static com.pharmacold.backend.domain.model.ShipmentFixture.*;
+import static com.pharmacold.backend.domain.model.ShipmentFixture.getCreatedShipment;
+import static com.pharmacold.backend.domain.model.ShipmentFixture.getInTransitShipment;
+import static com.pharmacold.backend.domain.model.ShipmentFixture.getInvalidShipmentRequest;
+import static com.pharmacold.backend.domain.model.ShipmentFixture.getShipmentWithStatus;
+import static com.pharmacold.backend.domain.model.ShipmentFixture.getValidShipmentRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ShipmentServiceTest {

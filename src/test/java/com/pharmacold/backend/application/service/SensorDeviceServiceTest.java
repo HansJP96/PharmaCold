@@ -17,16 +17,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.pharmacold.backend.domain.model.SensorDeviceFixture.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getAssignedSensor;
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getAvailableSensor;
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getSensorWithStatus;
+import static com.pharmacold.backend.domain.model.SensorDeviceFixture.getValidSensorRequest;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class SensorDeviceServiceTest {

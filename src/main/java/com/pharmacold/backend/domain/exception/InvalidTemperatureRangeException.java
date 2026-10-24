@@ -1,6 +1,5 @@
 package com.pharmacold.backend.domain.exception;
 
-import com.pharmacold.backend.domain.enums.SensorStatus;
 import lombok.Getter;
 
 @Getter
