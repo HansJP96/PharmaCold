@@ -53,7 +53,7 @@ public class User extends BaseAuditableEntity {
 
     @Builder.Default
     @Column(nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     public static User create(String firstName, String lastName, String email, String passwordHash, List<String> roles) {
         return User.builder()
