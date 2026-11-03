@@ -7,6 +7,7 @@ import com.pharmacold.backend.application.dto.response.UserResponse;
 import com.pharmacold.backend.application.service.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,7 +24,7 @@ public class AuthenticationController {
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
         UserResponse registeredUser = authenticationService.registerUser(request);
-        return ResponseEntity.ok(registeredUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
     }
 
     @PostMapping("/login")
