@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
@@ -58,6 +57,10 @@ public class ShipmentService {
 
     @Transactional(readOnly = true)
     public Slice<ShipmentResponse> getShipments(ShipmentStatus status, Pageable pageable) {
+        if (status == null) {
+            return shipmentRepository.findAll(pageable)
+                    .map(shipmentMapper::toResponse);
+        }
         return shipmentRepository.findByStatus(status, pageable)
                 .map(shipmentMapper::toResponse);
     }
@@ -89,13 +92,11 @@ public class ShipmentService {
         return shipmentMapper.toResponse(cancelledShipment);
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
     protected Shipment findShipmentById(Long id) {
         return shipmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Shipment.class.getSimpleName(), "id", id));
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
     protected Shipment findShipmentByTrackingNumber(String trackingNumber) {
         return shipmentRepository.findByTrackingNumber(trackingNumber)
                 .orElseThrow(() -> new ResourceNotFoundException(Shipment.class.getSimpleName(), "trackingNumber", trackingNumber));
